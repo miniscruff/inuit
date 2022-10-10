@@ -1,0 +1,19 @@
+{
+    "metadata": {
+        "name": "ScenePicker"
+    },
+    "content": [
+        "NormalBackground",
+        "OverBackground",
+        "ClickedBackground",
+        "SonoRegular18",
+        "SonoRegular24",
+        "SonoRegular36"
+    ]
+    "visuals": [
+        {
+            "name": "UI",
+            "useWindowSize": true
+        }
+    ]
+}

@@ -1,0 +1,44 @@
+{
+    "NormalBackground": {
+        "type": "Sprite",
+        "sprite": {
+            "image": "NormalBackground"
+        }
+    },
+    "OverBackground": {
+        "type": "Sprite",
+        "sprite": {
+            "image": "OverBackground"
+        }
+    },
+    "ClickedBackground": {
+        "type": "Sprite",
+        "sprite": {
+            "image": "ClickedBackground"
+        }
+    },
+    "SonoRegular18": {
+        "type": "Label",
+        "label": {
+            "font": "SonoRegular",
+            "size": 18,
+            "dpi": 72
+        }
+    },
+    "SonoRegular24": {
+        "type": "Label",
+        "label": {
+            "font": "SonoRegular",
+            "size": 24,
+            "dpi": 72
+        }
+    },
+    "SonoRegular36": {
+        "type": "Label",
+        "label": {
+            "font": "SonoRegular",
+            "size": 36,
+            "dpi": 72
+        }
+    }
+}

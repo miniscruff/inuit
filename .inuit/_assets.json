@@ -1,0 +1,18 @@
+{
+    "NormalBackground": {
+        "type": "Image",
+        "file": "normal_background.png"
+    },
+    "OverBackground": {
+        "type": "Image",
+        "file": "over_background.png"
+    },
+    "ClickedBackground": {
+        "type": "Image",
+        "file": "clicked_background.png"
+    },
+    "SonoRegular": {
+        "type": "OpenType",
+        "file": "Sono-Regular.ttf"
+    }
+}
