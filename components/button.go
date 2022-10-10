@@ -58,19 +58,19 @@ func NewButton(sprite *graphics.SpriteVisual, normal, over, clicked *content.Spr
 		igloo.NewFSMTransition(ReleasedButtonState, OverButtonState),
 	)
 
-	state.OnTransition(NormalButtonState, func() {
+	state.OnTransitionTo(NormalButtonState, func() {
 		sprite.SetSprite(normal)
 	})
 
-	state.OnTransition(OverButtonState, func() {
+	state.OnTransitionTo(OverButtonState, func() {
 		sprite.SetSprite(over)
 	})
 
-	state.OnTransition(ClickedButtonState, func() {
+	state.OnTransitionTo(ClickedButtonState, func() {
 		sprite.SetSprite(clicked)
 	})
 
-	state.OnTransition(ReleasedButtonState, func() {
+	state.OnTransitionTo(ReleasedButtonState, func() {
 		sprite.SetSprite(normal)
 	})
 

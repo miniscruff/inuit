@@ -1,5 +1,11 @@
 package internal
 
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+)
+
 type AssetType string
 type ContentType string
 
@@ -51,4 +57,44 @@ type SceneData struct {
 	Metadata SceneMetadata `json:"metadata"`
 	Content  []string      `json:"content"`
 	Visuals  []SceneVisual `json:"visuals"`
+}
+
+func LoadAssets(output *map[string]Asset) error {
+	assetFileBytes, err := os.ReadFile(filepath.Join(InternalDir, AssetsFile))
+	if err != nil {
+		return err
+	}
+
+	json.Unmarshal(assetFileBytes, output)
+	return nil
+}
+
+func LoadContent(output *map[string]Content) error {
+	contentFileBytes, err := os.ReadFile(filepath.Join(InternalDir, ContentsFile))
+	if err != nil {
+		return err
+	}
+
+	json.Unmarshal(contentFileBytes, output)
+	return nil
+}
+
+func LoadMetadata(output *Metadata) error {
+	metadataFileBytes, err := os.ReadFile(filepath.Join(InternalDir, MetadataFile))
+	if err != nil {
+		return err
+	}
+
+	json.Unmarshal(metadataFileBytes, output)
+	return nil
+}
+
+func LoadSceneData(output *SceneData, path string) error {
+	sceneFileBytes, err := os.ReadFile(filepath.Join(InternalDir, path))
+	if err != nil {
+		return err
+	}
+
+	json.Unmarshal(sceneFileBytes, output)
+	return nil
 }

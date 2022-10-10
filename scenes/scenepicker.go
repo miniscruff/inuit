@@ -3,10 +3,11 @@ package scenes
 import (
 	"image/color"
 
-	"github.com/miniscruff/inuit/components"
 	"github.com/miniscruff/igloo"
 	"github.com/miniscruff/igloo/graphics"
 	"github.com/miniscruff/igloo/mathf"
+	"github.com/miniscruff/inuit/components"
+	"github.com/miniscruff/inuit/internal"
 )
 
 type ScenePickerScene struct {
@@ -21,38 +22,48 @@ func NewScenePickerScene() (*ScenePickerScene, error) {
 	return &ScenePickerScene{}, nil
 }
 
-func (s *ScenePickerScene) PostSetup() {
+func (s *ScenePickerScene) PostSetup() error {
 	sw, _ := igloo.GetScreenSize()
 
-	sceneButton := graphics.NewSpriteVisual(s.content.NormalBackground)
-	sceneButton.Transform.SetAnchor(mathf.Vec2MiddleCenter)
-	sceneButton.Transform.SetX(float64(sw)/2)
-	sceneButton.Transform.SetY(80)
-	sceneButton.Transform.SetSize(250, 40)
-	sceneButton.SetVisible(true)
+	var y float64 = 80
 
-	sceneButtonText := graphics.NewLabelVisual(s.content.SonoRegular18)
-	sceneButtonText.SetText("New Scene")
-	sceneButtonText.ColorM.ScaleWithColor(color.White)
-	sceneButtonText.Transform.SetAnchor(mathf.Vec2MiddleCenter)
-	sceneButtonText.SetVisible(true)
-	sceneButton.InsertChild(sceneButtonText.Visualer)
-
-	newButton := components.NewButton(
-		sceneButton,
-		s.content.NormalBackground,
-		s.content.OverBackground,
-		s.content.ClickedBackground,
-	)
-	newButton.State.OnTransition(components.ReleasedButtonState, func() {
-		// create a new scene...
-	})
-
-	s.buttons = []*components.Button{
-		newButton,
+	scenes, err := internal.ExistingScenes()
+	if err != nil {
+		return err
 	}
 
-	s.tree.UI.InsertChild(sceneButton.Visualer)
+	for _, sceneName := range scenes {
+		button := graphics.NewSpriteVisual(s.content.NormalBackground)
+		button.Transform.SetAnchor(mathf.Vec2MiddleCenter)
+		button.Transform.SetX(float64(sw) / 2)
+		button.Transform.SetY(y)
+		button.Transform.SetSize(250, 40)
+		button.SetVisible(true)
+		s.tree.UI.InsertChild(button.Visualer)
+		y += 80
+
+		text := graphics.NewLabelVisual(s.content.SonoRegular18)
+		text.SetText(sceneName)
+		text.ColorM.ScaleWithColor(color.White)
+		text.Transform.SetAnchor(mathf.Vec2MiddleCenter)
+		text.SetVisible(true)
+		button.InsertChild(text.Visualer)
+
+		b := components.NewButton(
+			button,
+			s.content.NormalBackground,
+			s.content.OverBackground,
+			s.content.ClickedBackground,
+		)
+		b.State.OnTransitionTo(components.ReleasedButtonState, func() {
+			igloo.Pop()
+			igloo.Push(NewEditorScene(sceneName + ".json"))
+		})
+
+		s.buttons = append(s.buttons, b)
+	}
+
+	return nil
 }
 
 func (s *ScenePickerScene) Update() {
