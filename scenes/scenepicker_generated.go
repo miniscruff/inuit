@@ -170,7 +170,9 @@ func (s *ScenePickerScene) Setup(assetLoader *igloo.AssetLoader) error {
 
 func (s *ScenePickerScene) Draw(dest *ebiten.Image) {
 	offset := mathf.NewTransform()
-	s.tree.UI.Visualer.Draw(dest, offset, s.tree.UI.Transform)
+	s.tree.UI.Visualer.Layout(offset, s.tree.UI.Transform)
+
+	s.tree.UI.Visualer.Draw(dest)
 }
 
 func (s *ScenePickerScene) Dispose() {

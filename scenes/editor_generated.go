@@ -146,14 +146,17 @@ func NewEditorTree(content *EditorContent) (*EditorTree, error) {
 	Assets := graphics.NewEmptyVisual()
 	Assets.Transform.SetWidth(windowWidth)
 	Assets.Transform.SetHeight(windowHeight)
+	Assets.SetVisible(false)
 
 	Content := graphics.NewEmptyVisual()
 	Content.Transform.SetWidth(windowWidth)
 	Content.Transform.SetHeight(windowHeight)
+	Content.SetVisible(false)
 
 	Metadata := graphics.NewEmptyVisual()
 	Metadata.Transform.SetWidth(windowWidth)
 	Metadata.Transform.SetHeight(windowHeight)
+	Metadata.SetVisible(false)
 
 	return &EditorTree{
 		Editor:   Editor,
@@ -186,10 +189,15 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) error {
 
 func (s *EditorScene) Draw(dest *ebiten.Image) {
 	offset := mathf.NewTransform()
-	s.tree.Editor.Visualer.Draw(dest, offset, s.tree.Editor.Transform)
-	s.tree.Assets.Visualer.Draw(dest, offset, s.tree.Assets.Transform)
-	s.tree.Content.Visualer.Draw(dest, offset, s.tree.Content.Transform)
-	s.tree.Metadata.Visualer.Draw(dest, offset, s.tree.Metadata.Transform)
+	s.tree.Editor.Visualer.Layout(offset, s.tree.Editor.Transform)
+	s.tree.Assets.Visualer.Layout(offset, s.tree.Assets.Transform)
+	s.tree.Content.Visualer.Layout(offset, s.tree.Content.Transform)
+	s.tree.Metadata.Visualer.Layout(offset, s.tree.Metadata.Transform)
+
+	s.tree.Editor.Visualer.Draw(dest)
+	s.tree.Assets.Visualer.Draw(dest)
+	s.tree.Content.Visualer.Draw(dest)
+	s.tree.Metadata.Visualer.Draw(dest)
 }
 
 func (s *EditorScene) Dispose() {
