@@ -5,18 +5,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/miniscruff/igloo"
-	"github.com/miniscruff/igloo/graphics"
 	"github.com/miniscruff/inuit/internal"
-)
-
-type EditorState string
-
-const (
-	StateScene    EditorState = "scene"
-	StateAssets   EditorState = "assets"
-	StateContent  EditorState = "content"
-	StateMetadata EditorState = "metadata"
 )
 
 type EditorScene struct {
@@ -30,24 +19,13 @@ type EditorScene struct {
 	metadataData internal.Metadata
 	sceneData    internal.SceneData
 
-	state *igloo.FSM[EditorState]
-
 	keys      []ebiten.Key
 	lastInput int
 }
 
 func NewEditorScene(path string) *EditorScene {
-	state := igloo.NewFSM(
-		StateScene,
-		igloo.NewFSMTransition(StateScene, StateAssets, StateContent, StateMetadata),
-		igloo.NewFSMTransition(StateAssets, StateScene),
-		igloo.NewFSMTransition(StateContent, StateScene),
-		igloo.NewFSMTransition(StateMetadata, StateScene),
-	)
-
 	return &EditorScene{
 		path:  path,
-		state: state,
 	}
 }
 
@@ -65,29 +43,7 @@ func (s *EditorScene) PostSetup() (err error) {
 		return err
 	}
 
-	s.state.OnTransitionTo(StateScene, func() {
-	})
-	s.state.OnTransitionFrom(StateScene, func() {
-	})
-	s.state.OnTransitionTo(StateAssets, func() {
-		s.tree.Assets.SetVisible(true)
-	})
-	s.state.OnTransitionFrom(StateAssets, func() {
-		s.tree.Assets.SetVisible(false)
-	})
-	s.state.OnTransitionTo(StateContent, func() {
-		s.tree.Content.SetVisible(true)
-	})
-	s.state.OnTransitionFrom(StateContent, func() {
-		s.tree.Content.SetVisible(false)
-	})
-	s.state.OnTransitionTo(StateMetadata, func() {
-		s.tree.Metadata.SetVisible(true)
-	})
-	s.state.OnTransitionFrom(StateMetadata, func() {
-		s.tree.Metadata.SetVisible(false)
-	})
-
+	/*
 	var y float64 = 10
 	for name, asset := range s.assetData {
 		n := graphics.NewLabelVisual(s.content.SonoRegular18)
@@ -108,6 +64,7 @@ func (s *EditorScene) PostSetup() (err error) {
 		y += 20
 		s.tree.Assets.InsertChild(f.Visualer)
 	}
+	*/
 
 	return nil
 }
@@ -140,16 +97,16 @@ func (s *EditorScene) Update() {
 	}
 
 	if SlicesEqual(s.keys, internal.EditAssetsKeys) {
-		s.state.Transition(StateAssets)
+		// s.state.Transition(StateAssets)
 		s.clearInput()
 	} else if SlicesEqual(s.keys, internal.EditContentsKeys) {
-		s.state.Transition(StateContent)
+		// s.state.Transition(StateContent)
 		s.clearInput()
 	} else if SlicesEqual(s.keys, internal.EditMetadataKeys) {
-		s.state.Transition(StateMetadata)
+		// s.state.Transition(StateMetadata)
 		s.clearInput()
 	} else if inpututil.IsKeyJustReleased(ebiten.KeyEscape) {
-		s.state.Transition(StateScene)
+		// s.state.Transition(StateScene)
 		s.clearInput()
 	}
 }

@@ -65,8 +65,7 @@ func LoadAssets(output *map[string]Asset) error {
 		return err
 	}
 
-	json.Unmarshal(assetFileBytes, output)
-	return nil
+	return json.Unmarshal(assetFileBytes, output)
 }
 
 func LoadContent(output *map[string]Content) error {
@@ -75,8 +74,7 @@ func LoadContent(output *map[string]Content) error {
 		return err
 	}
 
-	json.Unmarshal(contentFileBytes, output)
-	return nil
+	return json.Unmarshal(contentFileBytes, output)
 }
 
 func LoadMetadata(output *Metadata) error {
@@ -85,8 +83,7 @@ func LoadMetadata(output *Metadata) error {
 		return err
 	}
 
-	json.Unmarshal(metadataFileBytes, output)
-	return nil
+	return json.Unmarshal(metadataFileBytes, output)
 }
 
 func LoadSceneData(output *SceneData, path string) error {
@@ -95,6 +92,5 @@ func LoadSceneData(output *SceneData, path string) error {
 		return err
 	}
 
-	json.Unmarshal(sceneFileBytes, output)
-	return nil
+	return json.Unmarshal(sceneFileBytes, output)
 }
