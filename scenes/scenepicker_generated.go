@@ -138,6 +138,7 @@ func NewScenePickerTree(content *ScenePickerContent) (*ScenePickerTree, error) {
 	windowHeight := float64(wh)
 
 	UI := graphics.NewEmptyVisual()
+	UI.SetVisible(true)
 	UI.Transform.SetWidth(windowWidth)
 	UI.Transform.SetHeight(windowHeight)
 

@@ -1,23 +1,24 @@
 package scenes
 
 import (
-	"log"
-
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/miniscruff/igloo"
+	"github.com/miniscruff/igloo/content"
+	"github.com/miniscruff/igloo/graphics"
+	"github.com/miniscruff/igloo/mathf"
 	"github.com/miniscruff/inuit/internal"
 )
 
 type EditorScene struct {
-	assets  *EditorAssets
-	content *EditorContent
-	tree    *EditorTree
+	assets          *EditorAssets
+	content         *EditorContent
+	disposeHandlers []func()
 
-	path         string
-	assetData    map[string]internal.Asset
-	contentData  map[string]internal.Content
-	metadataData internal.Metadata
-	sceneData    internal.SceneData
+	sceneAssets  map[string]any
+	sceneContent map[string]any
+	sceneTree    []*igloo.Visualer
+
+	path string
 
 	keys      []ebiten.Key
 	lastInput int
@@ -25,95 +26,135 @@ type EditorScene struct {
 
 func NewEditorScene(path string) *EditorScene {
 	return &EditorScene{
-		path:  path,
+		path: path,
 	}
 }
 
-func (s *EditorScene) PostSetup() (err error) {
-	if err := internal.LoadAssets(&s.assetData); err != nil {
-		return err
-	}
-	if err := internal.LoadContent(&s.contentData); err != nil {
-		return err
-	}
-	if err := internal.LoadMetadata(&s.metadataData); err != nil {
-		return err
-	}
-	if err := internal.LoadSceneData(&s.sceneData, s.path); err != nil {
+func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
+	s.assets, err = NewEditorAssets(assetLoader)
+	if err != nil {
 		return err
 	}
 
-	/*
-	var y float64 = 10
-	for name, asset := range s.assetData {
-		n := graphics.NewLabelVisual(s.content.SonoRegular18)
-		n.SetText(name)
-		n.SetY(y)
-		y += 20
-		s.tree.Assets.InsertChild(n.Visualer)
-
-		t := graphics.NewLabelVisual(s.content.SonoRegular18)
-		t.SetText(string(asset.Type))
-		t.SetY(y)
-		y += 20
-		s.tree.Assets.InsertChild(t.Visualer)
-
-		f := graphics.NewLabelVisual(s.content.SonoRegular18)
-		f.SetText(asset.File)
-		f.SetY(y)
-		y += 20
-		s.tree.Assets.InsertChild(f.Visualer)
+	s.content, err = NewEditorContent(s.assets)
+	if err != nil {
+		return err
 	}
-	*/
+
+	var (
+		assetData    map[string]internal.Asset
+		contentData  map[string]internal.Content
+		metadataData internal.Metadata
+		sceneData    internal.SceneData
+	)
+
+	if err := internal.LoadAssets(&assetData); err != nil {
+		return err
+	}
+	if err := internal.LoadContent(&contentData); err != nil {
+		return err
+	}
+	if err := internal.LoadMetadata(&metadataData); err != nil {
+		return err
+	}
+	if err := internal.LoadSceneData(&sceneData, s.path); err != nil {
+		return err
+	}
+
+	s.sceneAssets = make(map[string]any)
+	s.sceneContent = make(map[string]any)
+	s.sceneTree = make([]*igloo.Visualer, 0)
+
+	for k, a := range assetData {
+		switch a.Type {
+		case internal.AssetImage:
+			img, err := assetLoader.LoadImage(a.File)
+			if err != nil {
+				return err
+			}
+
+			s.sceneAssets[k] = img
+			s.disposeHandlers = append(s.disposeHandlers, func() {
+				img.Dispose()
+			})
+		}
+	}
+
+	for k, c := range contentData {
+		switch c.Type {
+		case internal.ContentSprite:
+			sprite := &content.Sprite{
+				Image: s.sceneAssets[c.Sprite.Asset].(*ebiten.Image),
+				// TODO: other sprite attributes
+			}
+
+			s.sceneContent[k] = sprite
+		}
+	}
+
+	for _, t := range sceneData.Visuals {
+		rootVis := loadVisual(t, s.sceneContent, nil)
+		s.sceneTree = append(s.sceneTree, rootVis)
+	}
 
 	return nil
 }
 
-func (s *EditorScene) Update() {
-	hasInput := false
-	for i := ebiten.KeyA; i <= ebiten.KeyZ; i++ {
-		k := ebiten.Key(i)
-		if inpututil.IsKeyJustReleased(k) {
-			s.keys = append(s.keys, k)
-			hasInput = true
-		}
+func loadVisual(visual internal.SceneVisual, contentMap map[string]any, parent *igloo.Visualer) *igloo.Visualer {
+	ww, wh := igloo.GetWindowSize()
+	windowWidth := float64(ww)
+	windowHeight := float64(wh)
+
+	var newVis *igloo.Visualer
+	switch visual.Type {
+	case internal.EmptyVisualType:
+		newVis = graphics.NewEmptyVisual().Visualer
+	case internal.SpriteVisualType:
+		sprite := graphics.NewSpriteVisual()
+		sprite.SetSprite(contentMap[visual.Sprite.Content].(*content.Sprite))
+		newVis = sprite.Visualer
 	}
 
-	if !hasInput {
-		s.lastInput++
+	newVis.SetVisible(visual.Visible)
+	newVis.SetPosition(visual.Transform.Position)
+	newVis.SetAnchor(visual.Transform.Anchor)
+	newVis.SetRotation(visual.Transform.Rotation)
+	if visual.UseWindowSize {
+		newVis.SetWidth(windowWidth)
+		newVis.SetHeight(windowHeight)
 	} else {
-		s.lastInput = 0
+		newVis.SetWidth(visual.Transform.Width)
+		newVis.SetHeight(visual.Transform.Height)
 	}
 
-	if len(s.keys) > 2 {
-		s.keys = s.keys[len(s.keys)-2:]
+	if parent != nil {
+		parent.InsertChild(newVis)
 	}
 
-	if len(s.keys) > 0 {
-		if s.lastInput > 30 {
-			s.clearInput()
-			log.Println("cleared")
-		}
+	for _, child := range visual.Children {
+		loadVisual(child, contentMap, newVis)
 	}
 
-	if SlicesEqual(s.keys, internal.EditAssetsKeys) {
-		// s.state.Transition(StateAssets)
-		s.clearInput()
-	} else if SlicesEqual(s.keys, internal.EditContentsKeys) {
-		// s.state.Transition(StateContent)
-		s.clearInput()
-	} else if SlicesEqual(s.keys, internal.EditMetadataKeys) {
-		// s.state.Transition(StateMetadata)
-		s.clearInput()
-	} else if inpututil.IsKeyJustReleased(ebiten.KeyEscape) {
-		// s.state.Transition(StateScene)
-		s.clearInput()
+	return newVis
+}
+
+func (s *EditorScene) Update() {
+}
+
+func (s *EditorScene) Draw(dest *ebiten.Image) {
+	offset := mathf.NewTransform()
+	for _, r := range s.sceneTree {
+		r.Layout(offset, r.Transform)
+		r.Draw(dest)
 	}
 }
 
-func (s *EditorScene) clearInput() {
-	s.keys = nil
-	s.lastInput = 0
+func (s *EditorScene) Dispose() {
+	s.assets.Dispose()
+	s.content.Dispose()
+	for _, h := range s.disposeHandlers {
+		h()
+	}
 }
 
 func SlicesEqual[T comparable](a, b []T) bool {

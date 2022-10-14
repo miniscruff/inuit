@@ -1,6 +1,6 @@
 {
     "metadata": {
-        "name": "ScenePicker"
+        "name": "Editor"
     },
     "content": [
         "NormalBackground",
@@ -9,13 +9,5 @@
         "SonoRegular18",
         "SonoRegular24",
         "SonoRegular36"
-    ],
-    "visuals": [
-        {
-            "name": "UI",
-            "type": "Empty",
-            "useWindowSize": true,
-            "visible": true
-        }
     ]
 }

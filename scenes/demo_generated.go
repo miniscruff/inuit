@@ -140,6 +140,7 @@ func NewDemoTree(content *DemoContent) (*DemoTree, error) {
 	windowHeight := float64(wh)
 
 	World := graphics.NewEmptyVisual()
+	World.SetVisible(true)
 	World.Transform.SetWidth(windowWidth)
 	World.Transform.SetHeight(windowHeight)
 
@@ -148,12 +149,16 @@ func NewDemoTree(content *DemoContent) (*DemoTree, error) {
 	AirCanister.SetVisible(true)
 	AirCanister.SetX(450)
 	AirCanister.SetY(125)
+	AirCanister.SetWidth(32)
+	AirCanister.SetHeight(32)
 
 	Generator := graphics.NewSpriteVisual()
 	Generator.SetSprite(content.OverBackground)
 	Generator.SetVisible(true)
-	Generator.SetX(-150)
+	Generator.SetX(150)
 	Generator.SetY(450)
+	Generator.SetWidth(32)
+	Generator.SetHeight(32)
 
 	World.InsertChild(AirCanister.Visualer)
 	World.InsertChild(Generator.Visualer)

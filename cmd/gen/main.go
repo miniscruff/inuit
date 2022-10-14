@@ -98,13 +98,22 @@ func New{{.Name}}Content(assets *{{.Name}}Assets) (*{{.Name}}Content, error) {
 	}, nil
 }
 
+{{- define "treeStruct" }}
+{{ .Name }} {{ .GoType }}
+{{- range .Children }}
+{{- template "treeStruct" . }}
+{{- end }}
+{{- end }}
+
+{{- define "retTree" }}
+{{ .Name }}: {{ .Name }},
+{{- range .Children }}
+{{- template "retTree" . }}
+{{- end }}
+{{- end }}
+
+{{ if .Tree }}
 type {{.Name}}Tree struct {
-	{{- define "treeStruct" }}
-	{{ .Name }} {{ .GoType }}
-	{{- range .Children }}
-	{{- template "treeStruct" . }}
-	{{- end }}
-	{{- end }}
 	{{- range .Tree }}
 	{{- template "treeStruct" . }}
 	{{- end }}
@@ -120,12 +129,6 @@ func New{{.Name}}Tree(content *{{.Name}}Content) (*{{.Name}}Tree, error) {
 	{{- end }}
 
 	return &{{.Name}}Tree{
-		{{- define "retTree" }}
-		{{ .Name }}: {{ .Name }},
-		{{- range .Children }}
-		{{- template "retTree" . }}
-		{{- end }}
-		{{- end }}
 		{{- range .Tree }}
 		{{- template "retTree" . }}
 		{{- end }}
@@ -167,6 +170,7 @@ func (s *{{.Name}}Scene) Dispose() {
 	s.content.Dispose()
 	s.tree = nil
 }
+{{- end }}
 `))
 )
 

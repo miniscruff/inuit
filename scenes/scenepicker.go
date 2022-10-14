@@ -33,6 +33,8 @@ func (s *ScenePickerScene) PostSetup() error {
 	}
 
 	for _, sceneName := range scenes {
+		sceneName := sceneName
+
 		button := graphics.NewSpriteVisual()
 		button.SetSprite(s.content.NormalBackground)
 		button.Transform.SetAnchor(mathf.Vec2MiddleCenter)
