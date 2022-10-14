@@ -2,41 +2,41 @@
     "NormalBackground": {
         "type": "Sprite",
         "sprite": {
-            "image": "NormalBackground"
+            "asset": "NormalBackground"
         }
     },
     "OverBackground": {
         "type": "Sprite",
         "sprite": {
-            "image": "OverBackground"
+            "asset": "OverBackground"
         }
     },
     "ClickedBackground": {
         "type": "Sprite",
         "sprite": {
-            "image": "ClickedBackground"
+            "asset": "ClickedBackground"
         }
     },
     "SonoRegular18": {
-        "type": "Label",
-        "label": {
-            "font": "SonoRegular",
+        "type": "Font",
+        "font": {
+            "asset": "SonoRegular",
             "size": 18,
             "dpi": 72
         }
     },
     "SonoRegular24": {
-        "type": "Label",
-        "label": {
-            "font": "SonoRegular",
+        "type": "Font",
+        "font": {
+            "asset": "SonoRegular",
             "size": 24,
             "dpi": 72
         }
     },
     "SonoRegular36": {
-        "type": "Label",
-        "label": {
-            "font": "SonoRegular",
+        "type": "Font",
+        "font": {
+            "asset": "SonoRegular",
             "size": 36,
             "dpi": 72
         }

@@ -1,6 +1,6 @@
 {
     "metadata": {
-        "name": "Demo"
+        "name": "ScenePicker"
     },
     "content": [
         "NormalBackground",
@@ -12,7 +12,8 @@
     ],
     "visuals": [
         {
-            "name": "Scenes",
+            "name": "UI",
+            "type": "Empty",
             "useWindowSize": true
         }
     ]

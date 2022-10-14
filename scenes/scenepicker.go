@@ -33,7 +33,8 @@ func (s *ScenePickerScene) PostSetup() error {
 	}
 
 	for _, sceneName := range scenes {
-		button := graphics.NewSpriteVisual(s.content.NormalBackground)
+		button := graphics.NewSpriteVisual()
+		button.SetSprite(s.content.NormalBackground)
 		button.Transform.SetAnchor(mathf.Vec2MiddleCenter)
 		button.Transform.SetX(float64(sw) / 2)
 		button.Transform.SetY(y)
@@ -42,7 +43,8 @@ func (s *ScenePickerScene) PostSetup() error {
 		s.tree.UI.InsertChild(button.Visualer)
 		y += 80
 
-		text := graphics.NewLabelVisual(s.content.SonoRegular18)
+		text := graphics.NewLabelVisual()
+		text.SetFont(s.content.SonoRegular18)
 		text.SetText(sceneName)
 		text.ColorM.ScaleWithColor(color.White)
 		text.Transform.SetAnchor(mathf.Vec2MiddleCenter)

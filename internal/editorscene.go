@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/miniscruff/igloo/mathf"
 )
 
 type AssetType string
 type ContentType string
+type VisualType string
 
 const (
 	AssetImage    AssetType = "Image"
@@ -15,7 +18,11 @@ const (
 
 	ContentSprite ContentType = "Sprite"
 	ContentSliced ContentType = "SlicedSprite"
-	ContentLabel  ContentType = "Label"
+	ContentFont   ContentType = "Font"
+
+	EmptyVisualType  VisualType = "Empty"
+	SpriteVisualType VisualType = "Sprite"
+	LabelVisualType  VisualType = "Label"
 )
 
 type Asset struct {
@@ -23,12 +30,17 @@ type Asset struct {
 	File string    `json:"file"`
 }
 
-type SpriteContent struct {
-	Image string `json:"image"`
+type BaseContent struct {
+	Asset string `json:"asset"`
 }
 
-type LabelContent struct {
-	Font string `json:"font"`
+type SpriteContent struct {
+	BaseContent
+}
+
+type FontContent struct {
+	BaseContent
+	Image string `json:"image"`
 	Size int    `json:"size"`
 	DPI  int    `json:"dpi"`
 }
@@ -36,7 +48,7 @@ type LabelContent struct {
 type Content struct {
 	Type   ContentType   `json:"type"`
 	Sprite SpriteContent `json:"sprite,omitempty"`
-	Label  LabelContent  `json:"label,omitempty"`
+	Font   FontContent   `json:"font,omitempty"`
 }
 
 type Metadata struct {
@@ -48,9 +60,35 @@ type SceneMetadata struct {
 	Name string `json:"name"`
 }
 
+type SceneTransform struct {
+	Position mathf.Vec2 `json:"position"`
+	Rotation float64    `json:"rotation"`
+	Anchor   mathf.Vec2 `json:"anchor"`
+	Width    float64    `json:"width"`
+	Height   float64    `json:"height"`
+}
+
+type BaseVisualData struct {
+	Content string `json:"content"`
+}
+
+type SpriteVisualData struct {
+	BaseVisualData
+}
+
+type LabelVisualData struct {
+	BaseVisualData
+}
+
 type SceneVisual struct {
-	Name          string `json:"name"`
-	UseWindowSize bool   `json:"useWindowSize"`
+	Name          string           `json:"name"`
+	Type          VisualType       `json:"type"`
+	UseWindowSize bool             `json:"useWindowSize"`
+	Visible       bool             `json:"visible"`
+	Transform     SceneTransform   `json:"transform"`
+	Sprite        SpriteVisualData `json:"sprite,omitempty"`
+	Label         LabelVisualData  `json:"label,omitempty"`
+	Children      []SceneVisual    `json:"children"`
 }
 
 type SceneData struct {
