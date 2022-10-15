@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/miniscruff/igloo"
 	"github.com/miniscruff/igloo/mathf"
 )
 
@@ -41,8 +42,8 @@ type SpriteContent struct {
 type FontContent struct {
 	BaseContent
 	Image string `json:"image"`
-	Size int    `json:"size"`
-	DPI  int    `json:"dpi"`
+	Size  int    `json:"size"`
+	DPI   int    `json:"dpi"`
 }
 
 type Content struct {
@@ -88,13 +89,14 @@ type SceneVisual struct {
 	Transform     SceneTransform   `json:"transform"`
 	Sprite        SpriteVisualData `json:"sprite,omitempty"`
 	Label         LabelVisualData  `json:"label,omitempty"`
-	Children      []SceneVisual    `json:"children"`
+	Children      []*SceneVisual    `json:"children"`
+	Visual        *igloo.Visualer  `json:"-"`
 }
 
 type SceneData struct {
 	Metadata SceneMetadata `json:"metadata"`
 	Content  []string      `json:"content"`
-	Visuals  []SceneVisual `json:"visuals"`
+	Visuals  []*SceneVisual `json:"visuals"`
 }
 
 func LoadAssets(output *map[string]Asset) error {
@@ -131,4 +133,21 @@ func LoadSceneData(output *SceneData, path string) error {
 	}
 
 	return json.Unmarshal(sceneFileBytes, output)
+}
+
+func SaveSceneData(output *SceneData, path string) error {
+	outputFile, err := os.Create(filepath.Join(InternalDir, path))
+	if err != nil {
+		return err
+	}
+
+	defer outputFile.Close()
+
+	outputBytes, err := json.Marshal(output)
+	if err != nil {
+		return err
+	}
+
+	_, err = outputFile.Write(outputBytes)
+	return err
 }

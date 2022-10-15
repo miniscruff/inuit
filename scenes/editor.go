@@ -1,7 +1,12 @@
 package scenes
 
 import (
+	"image/color"
+	"log"
+	"unicode"
+
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/miniscruff/igloo"
 	"github.com/miniscruff/igloo/content"
 	"github.com/miniscruff/igloo/graphics"
@@ -9,24 +14,44 @@ import (
 	"github.com/miniscruff/inuit/internal"
 )
 
+const wasdSpeed = 5
+
+type TextEditorState string
+
+const (
+	TextEditorClosed TextEditorState = "closed"
+	TextEditorOpen   TextEditorState = "open"
+)
+
 type EditorScene struct {
 	assets          *EditorAssets
 	content         *EditorContent
 	disposeHandlers []func()
+	sceneData       internal.SceneData
 
 	sceneAssets  map[string]any
 	sceneContent map[string]any
-	sceneTree    []*igloo.Visualer
 
 	path string
 
-	keys      []ebiten.Key
-	lastInput int
+	activeVisual *internal.SceneVisual
+	offset *mathf.Transform
+
+	inputState *igloo.FSM[TextEditorState]
+
+	textInput        []rune
+	textBuffer       []rune
+	inputRoot        *graphics.EmptyVisual
+	textInputLabel   *graphics.LabelVisual
+	inputResponse    *graphics.LabelVisual
+	inputBackground  *graphics.SpriteVisual
+	suggestionsLabel *graphics.LabelVisual
 }
 
 func NewEditorScene(path string) *EditorScene {
 	return &EditorScene{
 		path: path,
+		offset: mathf.NewTransform(),
 	}
 }
 
@@ -45,7 +70,6 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 		assetData    map[string]internal.Asset
 		contentData  map[string]internal.Content
 		metadataData internal.Metadata
-		sceneData    internal.SceneData
 	)
 
 	if err := internal.LoadAssets(&assetData); err != nil {
@@ -57,13 +81,12 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 	if err := internal.LoadMetadata(&metadataData); err != nil {
 		return err
 	}
-	if err := internal.LoadSceneData(&sceneData, s.path); err != nil {
+	if err := internal.LoadSceneData(&s.sceneData, s.path); err != nil {
 		return err
 	}
 
 	s.sceneAssets = make(map[string]any)
 	s.sceneContent = make(map[string]any)
-	s.sceneTree = make([]*igloo.Visualer, 0)
 
 	for k, a := range assetData {
 		switch a.Type {
@@ -92,15 +115,77 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 		}
 	}
 
-	for _, t := range sceneData.Visuals {
-		rootVis := loadVisual(t, s.sceneContent, nil)
-		s.sceneTree = append(s.sceneTree, rootVis)
+	for _, t := range s.sceneData.Visuals {
+		t.Visual = loadVisual(t, s.sceneContent, nil)
+
+		if s.activeVisual == nil {
+			s.activeVisual = t
+		}
 	}
+
+	ww, wh := igloo.GetWindowSize()
+	windowWidth := float64(ww)
+	windowHeight := float64(wh)
+
+	s.textInputLabel = graphics.NewLabelVisual()
+	s.textInputLabel.SetFont(s.content.SonoRegular18)
+	s.textInputLabel.ColorM.ScaleWithColor(color.White)
+	s.textInputLabel.Transform.SetX(5)
+	s.textInputLabel.Transform.SetY(windowHeight - 20)
+	s.textInputLabel.Transform.SetAnchor(mathf.Vec2TopLeft)
+	s.textInputLabel.SetVisible(true)
+
+	s.inputResponse = graphics.NewLabelVisual()
+	s.inputResponse.SetFont(s.content.SonoRegular18)
+	s.inputResponse.ColorM.ScaleWithColor(color.White)
+	s.inputResponse.Transform.SetY(windowHeight - 20)
+	s.inputResponse.Transform.SetAnchor(mathf.Vec2BottomLeft)
+	s.inputResponse.SetVisible(true)
+
+	s.inputBackground = graphics.NewSpriteVisual()
+	s.inputBackground.SetSprite(s.content.NormalBackground)
+	s.inputBackground.SetX(0)
+	s.inputBackground.SetY(windowHeight - 20)
+	s.inputBackground.SetHeight(20)
+	s.inputBackground.SetWidth(windowWidth)
+	s.inputBackground.SetVisible(true)
+
+	s.suggestionsLabel = graphics.NewLabelVisual()
+	s.suggestionsLabel.SetFont(s.content.SonoRegular18)
+	s.suggestionsLabel.Transform.SetY(windowHeight - 20)
+	s.suggestionsLabel.Transform.SetAnchor(mathf.Vec2TopLeft)
+	s.suggestionsLabel.SetVisible(true)
+
+	s.inputRoot = graphics.NewEmptyVisual()
+	s.inputRoot.Transform.SetWidth(windowWidth)
+	s.inputRoot.Transform.SetHeight(windowHeight)
+	s.inputRoot.SetVisible(false)
+
+	s.inputRoot.InsertChild(s.inputBackground.Visualer)
+	s.inputRoot.InsertChild(s.textInputLabel.Visualer)
+	s.inputRoot.InsertChild(s.inputResponse.Visualer)
+	s.inputRoot.InsertChild(s.suggestionsLabel.Visualer)
+
+	s.inputState = igloo.NewFSM(
+		TextEditorClosed,
+		igloo.NewFSMTransition(TextEditorClosed, TextEditorOpen),
+		igloo.NewFSMTransition(TextEditorOpen, TextEditorClosed),
+	)
+
+	s.inputState.OnTransitionTo(TextEditorClosed, func() {
+		s.inputRoot.SetVisible(false)
+	})
+
+	s.inputState.OnTransitionTo(TextEditorOpen, func() {
+		s.inputRoot.SetVisible(true)
+		s.textBuffer = nil
+		s.textInputLabel.SetText("")
+	})
 
 	return nil
 }
 
-func loadVisual(visual internal.SceneVisual, contentMap map[string]any, parent *igloo.Visualer) *igloo.Visualer {
+func loadVisual(visual *internal.SceneVisual, contentMap map[string]any, parent *igloo.Visualer) *igloo.Visualer {
 	ww, wh := igloo.GetWindowSize()
 	windowWidth := float64(ww)
 	windowHeight := float64(wh)
@@ -110,9 +195,10 @@ func loadVisual(visual internal.SceneVisual, contentMap map[string]any, parent *
 	case internal.EmptyVisualType:
 		newVis = graphics.NewEmptyVisual().Visualer
 	case internal.SpriteVisualType:
-		sprite := graphics.NewSpriteVisual()
-		sprite.SetSprite(contentMap[visual.Sprite.Content].(*content.Sprite))
-		newVis = sprite.Visualer
+		spriteContent := contentMap[visual.Sprite.Content].(*content.Sprite)
+		spriteVis := graphics.NewSpriteVisual()
+		spriteVis.SetSprite(spriteContent)
+		newVis = spriteVis.Visualer
 	}
 
 	newVis.SetVisible(visual.Visible)
@@ -135,18 +221,95 @@ func loadVisual(visual internal.SceneVisual, contentMap map[string]any, parent *
 		loadVisual(child, contentMap, newVis)
 	}
 
+	visual.Visual = newVis
+
 	return newVis
 }
 
 func (s *EditorScene) Update() {
+	if ebiten.IsKeyPressed(ebiten.KeyControl) && inpututil.IsKeyJustReleased(ebiten.KeyS) {
+		if err := internal.SaveSceneData(&s.sceneData, s.path+".temp"); err != nil {
+			log.Panic(err)
+		}
+	}
+	switch s.inputState.Current() {
+	case TextEditorClosed:
+		if inpututil.IsKeyJustReleased(ebiten.KeyEnter) {
+			s.inputState.Transition(TextEditorOpen)
+			break
+		}
+
+		dir := mathf.Vec2Zero
+		if ebiten.IsKeyPressed(ebiten.KeyW) {
+			dir.Y = -1
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyS) {
+			dir.Y = 1
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyD) {
+			dir.X = 1
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyA) {
+			dir.X = -1
+		}
+		if dir != mathf.Vec2Zero {
+			s.offset.Translate(dir.Unit().MulScalar(wasdSpeed))
+			s.activeVisual.Visual.ForceDirty()
+		}
+	case TextEditorOpen:
+		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+			s.inputState.Transition(TextEditorClosed)
+			break
+		}
+
+		s.textInput = ebiten.AppendInputChars(s.textInput[:0])
+		textChanged := false
+		for _, r := range s.textInput {
+			if ebiten.IsKeyPressed(ebiten.KeyShift) {
+				s.textBuffer = append(s.textBuffer, unicode.ToUpper(r))
+			} else {
+				s.textBuffer = append(s.textBuffer, r)
+			}
+			textChanged = true
+		}
+
+		backspaceDur := inpututil.KeyPressDuration(ebiten.KeyBackspace)
+		if len(s.textInputLabel.Text()) > 0 {
+			if backspaceDur == 1 || (backspaceDur-30 >= 0 && backspaceDur%5 == 0) {
+				s.textBuffer = s.textBuffer[:len(s.textBuffer)-1]
+				textChanged = true
+			}
+		}
+
+		if inpututil.IsKeyJustReleased(ebiten.KeyEnter) {
+			// submit
+			log.Println("do:", string(s.textBuffer))
+			s.textBuffer = nil
+			textChanged = true
+		}
+
+		if textChanged {
+			s.textInputLabel.SetText(string(s.textBuffer))
+		}
+	}
 }
 
 func (s *EditorScene) Draw(dest *ebiten.Image) {
-	offset := mathf.NewTransform()
-	for _, r := range s.sceneTree {
-		r.Layout(offset, r.Transform)
-		r.Draw(dest)
+	for _, v := range s.sceneData.Visuals {
+		var baseOffset *mathf.Transform
+		if v == s.activeVisual {
+			baseOffset = s.offset
+		} else {
+			baseOffset = mathf.NewTransform()
+		}
+
+		v.Visual.Layout(baseOffset, v.Visual.Transform)
+		v.Visual.Draw(dest)
 	}
+
+	fixedOffset := mathf.NewTransform()
+	s.inputRoot.Visualer.Layout(fixedOffset, s.inputRoot.Transform)
+	s.inputRoot.Visualer.Draw(dest)
 }
 
 func (s *EditorScene) Dispose() {
@@ -170,3 +333,46 @@ func SlicesEqual[T comparable](a, b []T) bool {
 
 	return true
 }
+
+
+/*
+in "normal" mode:
+WASD = move camera for current view
+R = reset position
+Space + mouse drag = move camera
+Enter = eneter a command
+
+commands:
+? = help shortcut eg "?" = all commands, "? set" = help for set
+open = open a new scene
+help = same as ?
+write = save scene to disk
+reload = reload scene from disk undoing changes
+cd = change directory, moves up and down the scene tree
+	cd = go to root
+	cd .. = go up
+	cd <child> = go into child
+ls = view current scene tree item and children
+hide/show = turn on or off for editor only
+set = set some value
+	name = our objects name
+	visible = true/false
+	windowSize = true/false
+	parent = name of our new parent
+	sprite/font/text depending on type
+	transform
+		x = x pos
+		y = y pos
+		width
+		height
+		anchor <x y>
+		anchor x value
+		anchor y yvalue
+		etc
+get = same as set but will just output the value
+add <type> <name> = add a new visual under our current object
+
+for anything that is a number you can use =, *=, +=, -=, /=, %=, ++, --
+the "dot" command of "." will rerun the last command
+a command stack ( say 50? ) will be saved and you can use the arrow keys to view them
+*/
