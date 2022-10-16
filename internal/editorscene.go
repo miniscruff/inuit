@@ -62,15 +62,15 @@ type SceneMetadata struct {
 }
 
 type SceneTransform struct {
-	Position mathf.Vec2 `json:"position"`
-	Rotation float64    `json:"rotation"`
-	Anchor   mathf.Vec2 `json:"anchor"`
-	Width    float64    `json:"width"`
-	Height   float64    `json:"height"`
+	Position mathf.Vec2 `json:"position,omitempty"`
+	Rotation float64    `json:"rotation,omitempty"`
+	Anchor   mathf.Vec2 `json:"anchor,omitempty"`
+	Width    float64    `json:"width,omitempty"`
+	Height   float64    `json:"height,omitempty"`
 }
 
 type BaseVisualData struct {
-	Content string `json:"content"`
+	Content string `json:"content,omitempty"`
 }
 
 type SpriteVisualData struct {
@@ -86,16 +86,16 @@ type SceneVisual struct {
 	Type          VisualType       `json:"type"`
 	UseWindowSize bool             `json:"useWindowSize"`
 	Visible       bool             `json:"visible"`
-	Transform     SceneTransform   `json:"transform"`
+	Transform     SceneTransform   `json:"transform,omitempty"`
 	Sprite        SpriteVisualData `json:"sprite,omitempty"`
 	Label         LabelVisualData  `json:"label,omitempty"`
-	Children      []*SceneVisual    `json:"children"`
+	Children      []*SceneVisual   `json:"children,omitempty"`
 	Visual        *igloo.Visualer  `json:"-"`
 }
 
 type SceneData struct {
-	Metadata SceneMetadata `json:"metadata"`
-	Content  []string      `json:"content"`
+	Metadata SceneMetadata  `json:"metadata"`
+	Content  []string       `json:"content"`
 	Visuals  []*SceneVisual `json:"visuals"`
 }
 

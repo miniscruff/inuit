@@ -1,8 +1,9 @@
 package scenes
 
 import (
+	"fmt"
 	"image/color"
-	"log"
+	"strings"
 	"unicode"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -32,10 +33,11 @@ type EditorScene struct {
 	sceneAssets  map[string]any
 	sceneContent map[string]any
 
-	path string
+	path     string
+	commands []*Command
 
 	activeVisual *internal.SceneVisual
-	offset *mathf.Transform
+	offset       *mathf.Transform
 
 	inputState *igloo.FSM[TextEditorState]
 
@@ -50,8 +52,9 @@ type EditorScene struct {
 
 func NewEditorScene(path string) *EditorScene {
 	return &EditorScene{
-		path: path,
-		offset: mathf.NewTransform(),
+		path:     path,
+		offset:   mathf.NewTransform(),
+		commands: buildCommands(),
 	}
 }
 
@@ -138,22 +141,19 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 	s.inputResponse = graphics.NewLabelVisual()
 	s.inputResponse.SetFont(s.content.SonoRegular18)
 	s.inputResponse.ColorM.ScaleWithColor(color.White)
-	s.inputResponse.Transform.SetY(windowHeight - 20)
-	s.inputResponse.Transform.SetAnchor(mathf.Vec2BottomLeft)
+	s.inputResponse.Transform.SetAnchor(mathf.Vec2TopLeft)
 	s.inputResponse.SetVisible(true)
 
 	s.inputBackground = graphics.NewSpriteVisual()
 	s.inputBackground.SetSprite(s.content.NormalBackground)
-	s.inputBackground.SetX(0)
-	s.inputBackground.SetY(windowHeight - 20)
-	s.inputBackground.SetHeight(20)
 	s.inputBackground.SetWidth(windowWidth)
+	s.inputBackground.SetAnchor(mathf.Vec2TopLeft)
 	s.inputBackground.SetVisible(true)
 
 	s.suggestionsLabel = graphics.NewLabelVisual()
 	s.suggestionsLabel.SetFont(s.content.SonoRegular18)
 	s.suggestionsLabel.Transform.SetY(windowHeight - 20)
-	s.suggestionsLabel.Transform.SetAnchor(mathf.Vec2TopLeft)
+	s.suggestionsLabel.Transform.SetAnchor(mathf.Vec2BottomLeft)
 	s.suggestionsLabel.SetVisible(true)
 
 	s.inputRoot = graphics.NewEmptyVisual()
@@ -179,7 +179,8 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 	s.inputState.OnTransitionTo(TextEditorOpen, func() {
 		s.inputRoot.SetVisible(true)
 		s.textBuffer = nil
-		s.textInputLabel.SetText("")
+		s.textInputLabel.SetText("_")
+		s.inputBackground.SetHeight(20)
 	})
 
 	return nil
@@ -227,11 +228,6 @@ func loadVisual(visual *internal.SceneVisual, contentMap map[string]any, parent 
 }
 
 func (s *EditorScene) Update() {
-	if ebiten.IsKeyPressed(ebiten.KeyControl) && inpututil.IsKeyJustReleased(ebiten.KeyS) {
-		if err := internal.SaveSceneData(&s.sceneData, s.path+".temp"); err != nil {
-			log.Panic(err)
-		}
-	}
 	switch s.inputState.Current() {
 	case TextEditorClosed:
 		if inpututil.IsKeyJustReleased(ebiten.KeyEnter) {
@@ -274,22 +270,54 @@ func (s *EditorScene) Update() {
 		}
 
 		backspaceDur := inpututil.KeyPressDuration(ebiten.KeyBackspace)
-		if len(s.textInputLabel.Text()) > 0 {
+		if len(s.textBuffer) > 0 {
 			if backspaceDur == 1 || (backspaceDur-30 >= 0 && backspaceDur%5 == 0) {
 				s.textBuffer = s.textBuffer[:len(s.textBuffer)-1]
 				textChanged = true
 			}
 		}
 
+		if inpututil.IsKeyJustReleased(ebiten.KeyTab) {
+			cmd := string(s.textBuffer)
+			suggestions := buildSuggestions(s, s.commands, cmd)
+			if len(suggestions) == 1 {
+				split := strings.Split(cmd, " ")
+				if len(split) == 1 {
+					s.textBuffer = []rune(suggestions[0])
+				} else {
+					s.textBuffer = []rune(strings.Join(split[:len(split)-1], " "))
+					s.textBuffer = append(s.textBuffer, []rune(" ")...)
+					s.textBuffer = append(s.textBuffer, []rune(suggestions[0])...)
+				}
+				s.textBuffer = append(s.textBuffer, []rune(" ")...)
+				textChanged = true
+			}
+		}
+
 		if inpututil.IsKeyJustReleased(ebiten.KeyEnter) {
-			// submit
-			log.Println("do:", string(s.textBuffer))
-			s.textBuffer = nil
-			textChanged = true
+			cmd := strings.Trim(string(s.textBuffer), "\n ")
+			if len(cmd) > 0 {
+				output, err := runCommand(s, s.commands, cmd)
+				if err != nil {
+					output = fmt.Sprintf("unable to run command: %v\n%v", cmd, err.Error())
+				}
+
+				s.inputResponse.SetText(output)
+				s.inputBackground.SetHeight(s.inputResponse.NaturalHeight())
+				s.textBuffer = nil
+				textChanged = true
+			}
 		}
 
 		if textChanged {
-			s.textInputLabel.SetText(string(s.textBuffer))
+			cmd := string(s.textBuffer)
+			suggestions := buildSuggestions(s, s.commands, cmd)
+			if len(suggestions) > 0 {
+				s.suggestionsLabel.SetText(strings.Join(suggestions, "\n"))
+			} else {
+				s.suggestionsLabel.SetText("")
+			}
+			s.textInputLabel.SetText(cmd+"_")
 		}
 	}
 }
@@ -333,46 +361,3 @@ func SlicesEqual[T comparable](a, b []T) bool {
 
 	return true
 }
-
-
-/*
-in "normal" mode:
-WASD = move camera for current view
-R = reset position
-Space + mouse drag = move camera
-Enter = eneter a command
-
-commands:
-? = help shortcut eg "?" = all commands, "? set" = help for set
-open = open a new scene
-help = same as ?
-write = save scene to disk
-reload = reload scene from disk undoing changes
-cd = change directory, moves up and down the scene tree
-	cd = go to root
-	cd .. = go up
-	cd <child> = go into child
-ls = view current scene tree item and children
-hide/show = turn on or off for editor only
-set = set some value
-	name = our objects name
-	visible = true/false
-	windowSize = true/false
-	parent = name of our new parent
-	sprite/font/text depending on type
-	transform
-		x = x pos
-		y = y pos
-		width
-		height
-		anchor <x y>
-		anchor x value
-		anchor y yvalue
-		etc
-get = same as set but will just output the value
-add <type> <name> = add a new visual under our current object
-
-for anything that is a number you can use =, *=, +=, -=, /=, %=, ++, --
-the "dot" command of "." will rerun the last command
-a command stack ( say 50? ) will be saved and you can use the arrow keys to view them
-*/
