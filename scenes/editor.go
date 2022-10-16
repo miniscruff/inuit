@@ -119,11 +119,7 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 	}
 
 	for _, t := range s.sceneData.Visuals {
-		t.Visual = loadVisual(t, s.sceneContent, nil)
-
-		if s.activeVisual == nil {
-			s.activeVisual = t
-		}
+		loadVisual(t, s.sceneContent, nil)
 	}
 
 	ww, wh := igloo.GetWindowSize()
@@ -152,7 +148,7 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 
 	s.suggestionsLabel = graphics.NewLabelVisual()
 	s.suggestionsLabel.SetFont(s.content.SonoRegular18)
-	s.suggestionsLabel.Transform.SetY(windowHeight - 20)
+	s.suggestionsLabel.Transform.SetY(windowHeight - 24)
 	s.suggestionsLabel.Transform.SetAnchor(mathf.Vec2BottomLeft)
 	s.suggestionsLabel.SetVisible(true)
 
@@ -186,12 +182,13 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 	return nil
 }
 
-func loadVisual(visual *internal.SceneVisual, contentMap map[string]any, parent *igloo.Visualer) *igloo.Visualer {
+func loadVisual(visual *internal.SceneVisual, contentMap map[string]any, parent *internal.SceneVisual) {
 	ww, wh := igloo.GetWindowSize()
 	windowWidth := float64(ww)
 	windowHeight := float64(wh)
 
 	var newVis *igloo.Visualer
+
 	switch visual.Type {
 	case internal.EmptyVisualType:
 		newVis = graphics.NewEmptyVisual().Visualer
@@ -202,6 +199,7 @@ func loadVisual(visual *internal.SceneVisual, contentMap map[string]any, parent 
 		newVis = spriteVis.Visualer
 	}
 
+	visual.Visual = newVis
 	newVis.SetVisible(visual.Visible)
 	newVis.SetPosition(visual.Transform.Position)
 	newVis.SetAnchor(visual.Transform.Anchor)
@@ -215,16 +213,13 @@ func loadVisual(visual *internal.SceneVisual, contentMap map[string]any, parent 
 	}
 
 	if parent != nil {
-		parent.InsertChild(newVis)
+		parent.Visual.InsertChild(newVis)
+		visual.Parent = parent
 	}
 
 	for _, child := range visual.Children {
-		loadVisual(child, contentMap, newVis)
+		loadVisual(child, contentMap, visual)
 	}
-
-	visual.Visual = newVis
-
-	return newVis
 }
 
 func (s *EditorScene) Update() {
@@ -250,7 +245,6 @@ func (s *EditorScene) Update() {
 		}
 		if dir != mathf.Vec2Zero {
 			s.offset.Translate(dir.Unit().MulScalar(wasdSpeed))
-			s.activeVisual.Visual.ForceDirty()
 		}
 	case TextEditorOpen:
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -317,7 +311,7 @@ func (s *EditorScene) Update() {
 			} else {
 				s.suggestionsLabel.SetText("")
 			}
-			s.textInputLabel.SetText(cmd+"_")
+			s.textInputLabel.SetText(cmd + "_")
 		}
 	}
 }
@@ -325,7 +319,7 @@ func (s *EditorScene) Update() {
 func (s *EditorScene) Draw(dest *ebiten.Image) {
 	for _, v := range s.sceneData.Visuals {
 		var baseOffset *mathf.Transform
-		if v == s.activeVisual {
+		if true {
 			baseOffset = s.offset
 		} else {
 			baseOffset = mathf.NewTransform()

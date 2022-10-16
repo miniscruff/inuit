@@ -90,6 +90,7 @@ type SceneVisual struct {
 	Sprite        SpriteVisualData `json:"sprite,omitempty"`
 	Label         LabelVisualData  `json:"label,omitempty"`
 	Children      []*SceneVisual   `json:"children,omitempty"`
+	Parent        *SceneVisual     `json:"-"`
 	Visual        *igloo.Visualer  `json:"-"`
 }
 
