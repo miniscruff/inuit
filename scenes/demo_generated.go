@@ -7,7 +7,6 @@ import (
 	"github.com/miniscruff/igloo"
 	"github.com/miniscruff/igloo/content"
 	"github.com/miniscruff/igloo/graphics"
-	"github.com/miniscruff/igloo/mathf"
 	"golang.org/x/image/font/opentype"
 )
 
@@ -192,8 +191,7 @@ func (s *DemoScene) Setup(assetLoader *igloo.AssetLoader) error {
 }
 
 func (s *DemoScene) Draw(dest *ebiten.Image) {
-	offset := mathf.NewTransform()
-	s.tree.World.Visualer.Layout(offset, s.tree.World.Transform)
+	s.tree.World.Visualer.Layout(s.tree.World.Transform)
 	s.tree.World.Visualer.Draw(dest)
 }
 

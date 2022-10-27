@@ -1,4 +1,4 @@
-package internal
+package commands
 
 import (
 	"encoding/json"
@@ -24,6 +24,11 @@ const (
 	EmptyVisualType  VisualType = "Empty"
 	SpriteVisualType VisualType = "Sprite"
 	LabelVisualType  VisualType = "Label"
+
+	InternalDir = ".inuit"
+	AssetsFile = "_assets.json"
+	ContentsFile = "_content.json"
+	MetadataFile = "_metadata.json"
 )
 
 type Asset struct {

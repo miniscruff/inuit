@@ -13,7 +13,7 @@ import (
 	"golang.org/x/tools/imports"
 
 	"github.com/miniscruff/igloo/mathf"
-	"github.com/miniscruff/inuit/internal"
+	"github.com/miniscruff/inuit/commands"
 )
 
 var (
@@ -157,10 +157,8 @@ func (s *{{.Name}}Scene) Setup(assetLoader *igloo.AssetLoader) error {
 }
 
 func (s *{{.Name}}Scene) Draw(dest *ebiten.Image) {
-	offset := mathf.NewTransform()
-
 	{{- range .Tree}}
-	s.tree.{{ .Name }}.Visualer.Layout(offset, s.tree.{{ .Name }}.Transform)
+	s.tree.{{ .Name }}.Visualer.Layout(s.tree.{{ .Name }}.Transform)
 	s.tree.{{ .Name }}.Visualer.Draw(dest)
 	{{- end}}
 }
@@ -208,7 +206,7 @@ type GeneratedSceneContext struct {
 	Tree     []GenTree
 }
 
-func generateBaseScene(w io.Writer, scene internal.SceneData) error {
+func generateBaseScene(w io.Writer, scene commands.SceneData) error {
 	ctx := BaseSceneContext{
 		Name: scene.Metadata.Name,
 	}
@@ -217,10 +215,10 @@ func generateBaseScene(w io.Writer, scene internal.SceneData) error {
 
 func generateGeneratedScene(
 	w io.Writer,
-	scene internal.SceneData,
-	assets map[string]internal.Asset,
-	content map[string]internal.Content,
-	metadata internal.Metadata,
+	scene commands.SceneData,
+	assets map[string]commands.Asset,
+	content map[string]commands.Content,
+	metadata commands.Metadata,
 ) error {
 	var tree []GenTree
 	for _, v := range scene.Visuals {
@@ -244,7 +242,7 @@ func generateGeneratedScene(
 	return genSceneTmpl.Execute(w, ctx)
 }
 
-func findAllAssets(assets map[string]internal.Asset, content map[string]internal.Content, contentKeys []string) []GenAsset {
+func findAllAssets(assets map[string]commands.Asset, content map[string]commands.Content, contentKeys []string) []GenAsset {
 	var genAssets []GenAsset
 	seen := make(map[string]struct{})
 
@@ -252,12 +250,12 @@ func findAllAssets(assets map[string]internal.Asset, content map[string]internal
 		c := content[key]
 		var a GenAsset
 		switch c.Type {
-		case internal.ContentFont:
+		case commands.ContentFont:
 			a.Name = c.Font.Asset
 			a.LoadMethod = "LoadOpenType"
 			a.Dispose = " = nil"
 			a.GoType = "*opentype.Font"
-		case internal.ContentSprite:
+		case commands.ContentSprite:
 			a.Name = c.Sprite.Asset
 			a.LoadMethod = "LoadImage"
 			a.Dispose = ".Dispose()"
@@ -277,7 +275,7 @@ func findAllAssets(assets map[string]internal.Asset, content map[string]internal
 	return genAssets
 }
 
-func findAllContent(content map[string]internal.Content, contentKeys []string) []GenContent {
+func findAllContent(content map[string]commands.Content, contentKeys []string) []GenContent {
 	var genContent []GenContent
 	seen := make(map[string]struct{})
 
@@ -292,7 +290,7 @@ func findAllContent(content map[string]internal.Content, contentKeys []string) [
 			Name: key,
 		}
 		switch c.Type {
-		case internal.ContentFont:
+		case commands.ContentFont:
 			a.Dispose = ".Close()"
 			a.GoType = "*content.Font"
 			a.Create = func() string {
@@ -309,7 +307,7 @@ func findAllContent(content map[string]internal.Content, contentKeys []string) [
 	}
 `, a.Name, c.Font.Asset, c.Font.Size, c.Font.DPI, a.Name, a.Name)
 			}
-		case internal.ContentSprite:
+		case commands.ContentSprite:
 			a.GoType = "*content.Sprite"
 			a.Create = func() string {
 				return fmt.Sprintf(`%v := &content.Sprite{
@@ -324,17 +322,17 @@ func findAllContent(content map[string]internal.Content, contentKeys []string) [
 	return genContent
 }
 
-func buildTree(visual internal.SceneVisual) GenTree {
+func buildTree(visual *commands.SceneVisual) GenTree {
 	t := GenTree{
 		Name: visual.Name,
 	}
 
 	switch visual.Type {
-	case internal.EmptyVisualType:
+	case commands.EmptyVisualType:
 		t.GoType = "*graphics.EmptyVisual"
-	case internal.SpriteVisualType:
+	case commands.SpriteVisualType:
 		t.GoType = "*graphics.SpriteVisual"
-	case internal.LabelVisualType:
+	case commands.LabelVisualType:
 		t.GoType = "*graphics.LabelVisual"
 	}
 
@@ -347,16 +345,16 @@ func buildTree(visual internal.SceneVisual) GenTree {
 	return t
 }
 
-func genVisualBuild(t GenTree, visual internal.SceneVisual, children []GenTree) string {
+func genVisualBuild(t GenTree, visual *commands.SceneVisual, children []GenTree) string {
 	var b strings.Builder
 
 	switch visual.Type {
-	case internal.EmptyVisualType:
+	case commands.EmptyVisualType:
 		writeFormat(&b, "%v := graphics.NewEmptyVisual()", t.Name)
-	case internal.SpriteVisualType:
+	case commands.SpriteVisualType:
 		writeFormat(&b, "%v := graphics.NewSpriteVisual()", t.Name)
 		writeFormat(&b, "%v.SetSprite(content.%v)", t.Name, visual.Sprite.Content)
-	case internal.LabelVisualType:
+	case commands.LabelVisualType:
 		writeFormat(&b, "%v := graphics.NewLabelVisual()", t.Name)
 		writeFormat(&b, "%v.SetFont(content.%v)", t.Name, visual.Label.Content)
 	}
@@ -415,31 +413,31 @@ func genVisualBuild(t GenTree, visual internal.SceneVisual, children []GenTree) 
 }
 
 func main() {
-	var assets map[string]internal.Asset
-	var content map[string]internal.Content
-	var metadata internal.Metadata
+	var assets map[string]commands.Asset
+	var content map[string]commands.Content
+	var metadata commands.Metadata
 	var scenes []string
 	var err error
 
-	if err = internal.LoadAssets(&assets); err != nil {
+	if err = commands.LoadAssets(&assets); err != nil {
 		log.Fatal(err)
 	}
 
-	if err = internal.LoadContent(&content); err != nil {
+	if err = commands.LoadContent(&content); err != nil {
 		log.Fatal(err)
 	}
 
-	if err = internal.LoadMetadata(&metadata); err != nil {
+	if err = commands.LoadMetadata(&metadata); err != nil {
 		log.Fatal(err)
 	}
 
-	if scenes, err = internal.ExistingScenes(); err != nil {
+	if scenes, err = commands.ExistingScenes(); err != nil {
 		log.Fatal(err)
 	}
 
 	for _, fileName := range scenes {
-		var scene internal.SceneData
-		if err = internal.LoadSceneData(&scene, fileName+".json"); err != nil {
+		var scene commands.SceneData
+		if err = commands.LoadSceneData(&scene, fileName+".json"); err != nil {
 			log.Fatal(err)
 		}
 

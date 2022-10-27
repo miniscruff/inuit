@@ -1,9 +1,8 @@
-package scenes
+package commands
 
+/*
 import (
 	"errors"
-	"fmt"
-	"io"
 	"strconv"
 	"strings"
 
@@ -38,7 +37,6 @@ add <type> <name> = add a new visual under our current object
 for anything that is a number you can use =, *=, +=, -=, /=, %=, ++, --
 the "dot" command of "." will rerun the last command
 a command stack ( say 50? ) will be saved and you can use the arrow keys to view them
-*/
 
 type Command struct {
 	Key         string
@@ -48,21 +46,11 @@ type Command struct {
 	Subcommands []*Command
 }
 
-func buildCommands() []*Command {
-	return []*Command{
-		cdCommand(),
-		helpCommand(),
-		lsCommand(),
-		setCommand(),
-		writeCommand(),
-	}
-}
-
 func runCommand(scene *EditorScene, commands []*Command, text string) (string, error) {
 	split := strings.Split(text, " ")
 	cmd, args := findCommand(nil, commands, split)
 	if cmd == nil {
-		return "", errors.New("command not found")
+		return "", errCommandNotFound
 	}
 
 	return cmd.Run(scene, args)
@@ -113,11 +101,44 @@ func buildSuggestions(scene *EditorScene, commands []*Command, text string) []st
 		})
 	}
 
-	if cmd != nil {
+	if cmd != nil && cmd.Suggestions != nil {
 		return cmd.Suggestions(scene, partial)
 	}
 
 	return nil
+}
+
+func buildCommands() []*Command {
+	return []*Command{
+		cdCommand(),
+		{
+			Key: "help",
+			Help: func() string {
+				return "print help on running a command"
+			},
+			Run: helpAction,
+		},
+		{
+			Key: "ls",
+			Help: func() string {
+				return "list the current object and children names"
+			},
+			Run: lsAction,
+		},
+		setCommand(),
+		{
+			Key: "write",
+			Help: func() string {
+				return "save scene to disk"
+			},
+			Run: func(scene *EditorScene, args []string) (string, error) {
+				if err := internal.SaveSceneData(&scene.sceneData, "testing.json"); err != nil {
+					return "scene unable to save", err
+				}
+				return "scene saved", nil
+			},
+		},
+	}
 }
 
 /*
@@ -136,102 +157,6 @@ func xCommand() *Command {
 			return "", nil
 		},
 		Subcommands: []*Command{
-		},
-	}
-}
-*/
-
-func helpCommand() *Command {
-	return &Command{
-		Key: "help",
-		Help: func() string {
-			return "print help on running a command"
-		},
-		Suggestions: func(scene *EditorScene, partial []string) []string {
-			return nil
-		},
-		Run: func(scene *EditorScene, args []string) (string, error) {
-			var builder strings.Builder
-			if len(args) == 0 {
-				longestKey := 0
-				for _, cmd := range scene.commands {
-					lKey := len(cmd.Key)
-					if lKey > longestKey {
-						longestKey = lKey
-					}
-				}
-
-				for _, cmd := range scene.commands {
-					writeFormat(
-						&builder,
-						"%v%v %v",
-						cmd.Key,
-						strings.Repeat(" ", longestKey-len(cmd.Key)),
-						cmd.Help(),
-					)
-				}
-				return builder.String(), nil
-			} else {
-				cmd, _ := findCommand(nil, scene.commands, args)
-				if cmd == nil {
-					return "", errors.New("command not found:" + strings.Join(args, " "))
-				}
-				return cmd.Help(), nil
-			}
-		},
-	}
-}
-
-func writeCommand() *Command {
-	return &Command{
-		Key: "write",
-		Help: func() string {
-			return "save scene to disk"
-		},
-		Suggestions: func(scene *EditorScene, partial []string) []string {
-			return nil
-		},
-		Run: func(scene *EditorScene, args []string) (string, error) {
-			if err := internal.SaveSceneData(&scene.sceneData, "testing.json"); err != nil {
-				return "scene unable to save", err
-			}
-			return "scene saved", nil
-		},
-	}
-}
-
-func lsCommand() *Command {
-	return &Command{
-		Key: "ls",
-		Help: func() string {
-			return "list the current object and children names"
-		},
-		Suggestions: func(scene *EditorScene, partial []string) []string {
-			return nil
-		},
-		Run: func(scene *EditorScene, args []string) (string, error) {
-			var builder strings.Builder
-
-			if scene.activeVisual != nil {
-				writeFormat(&builder, ".%v", scene.activeVisual.Name)
-				for _, child := range scene.activeVisual.Children {
-					writeFormat(
-						&builder,
-						"./%v",
-						child.Name,
-					)
-				}
-			} else {
-				writeFormat(&builder, "No selection")
-				for _, child := range scene.sceneData.Visuals {
-					writeFormat(
-						&builder,
-						"./%v",
-						child.Name,
-					)
-				}
-			}
-			return builder.String(), nil
 		},
 	}
 }
@@ -285,7 +210,6 @@ func cdCommand() *Command {
 	}
 }
 
-/*
 	visible = true/false
 	parent = name of our new parent
 	sprite/font/text depending on type
@@ -297,16 +221,12 @@ func cdCommand() *Command {
 	anchor x value
 	anchor y value
 		etc
-*/
 
 func setCommand() *Command {
 	return &Command{
 		Key: "set",
 		Help: func() string {
 			return "modify a value of our visual"
-		},
-		Suggestions: func(scene *EditorScene, partial []string) []string {
-			return nil
 		},
 		Subcommands: []*Command{
 			{
@@ -393,35 +313,4 @@ func setCommand() *Command {
 		},
 	}
 }
-func writeFormat(w io.StringWriter, format string, args ...any) {
-	w.WriteString(fmt.Sprintf(format+"\n", args...))
-}
-
-func filter[T any](prefix string, search []T, keyFunc func(T) string) []string {
-	var res []string
-	prefixLower := strings.ToLower(prefix)
-	for _, item := range search {
-		key := keyFunc(item)
-		if strings.HasPrefix(strings.ToLower(key), prefixLower) {
-			res = append(res, key)
-		}
-	}
-	return res
-}
-
-func mathOp(value float64, operator string, operand float64) float64 {
-	switch operator {
-	case "=":
-		return operand
-	case "*":
-		return value * operand
-	case "+":
-		return value + operand
-	case "-":
-		return value - operand
-	case "/":
-		return value / operand
-	default:
-		panic("unknown operator:" + operator)
-	}
-}
+*/

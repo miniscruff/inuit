@@ -12,6 +12,7 @@ import (
 	"github.com/miniscruff/igloo"
 
 	"github.com/miniscruff/inuit/scenes"
+	"github.com/miniscruff/inuit/commands"
 )
 
 var (
@@ -37,10 +38,12 @@ func main() {
 	igloo.SetScreenSize(1024, 768)
 	ebiten.SetWindowTitle("inuit")
 
-	scene, err := scenes.NewScenePickerScene()
+	sceneNames, err := commands.ExistingScenes()
 	if err != nil {
-		fmt.Printf("failure to load scene: %v\n", err)
+		fmt.Printf("failure to find scenes: %v\n", err)
 	}
+
+	scene := scenes.NewEditorScene(sceneNames[0]+".json")
 
 	// push our starting scene and run
 	igloo.Push(scene)
