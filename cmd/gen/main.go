@@ -390,6 +390,11 @@ func genVisualBuild(t GenTree, visual *commands.SceneVisual, children []GenTree)
 		t.Name, transform.Anchors.Left, transform.Anchors.Right, transform.Anchors.Top, transform.Anchors.Bottom,
 	)
 	condWrite(&b,
+		transform.Offsets != mathf.SidesZero,
+		"%v.SetOffsets(mathf.Sides{Left: %v, Right: %v, Top: %v, Bottom: %v})",
+		t.Name, transform.Offsets.Left, transform.Offsets.Right, transform.Offsets.Top, transform.Offsets.Bottom,
+	)
+	condWrite(&b,
 		transform.Pivot != mathf.Vec2Zero,
 		"%v.SetPivot(mathf.Vec2{X: %v, Y: %v})",
 		t.Name, transform.Pivot.X, transform.Pivot.Y,

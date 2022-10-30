@@ -129,10 +129,10 @@ func NewDemoContent(assets *DemoAssets) (*DemoContent, error) {
 }
 
 type DemoTree struct {
-	World     *graphics.EmptyVisual
-	TopLeft   *graphics.SpriteVisual
-	MidCenter *graphics.SpriteVisual
-	BotRight  *graphics.SpriteVisual
+	World      *graphics.EmptyVisual
+	TopLeft    *graphics.SpriteVisual
+	MidCenter  *graphics.SpriteVisual
+	FullScreen *graphics.SpriteVisual
 }
 
 func NewDemoTree(content *DemoContent) (*DemoTree, error) {
@@ -155,21 +155,21 @@ func NewDemoTree(content *DemoContent) (*DemoTree, error) {
 	MidCenter.SetAnchors(mathf.Sides{Left: 0.5, Right: 0.5, Top: 0.5, Bottom: 0.5})
 	MidCenter.SetPivot(mathf.Vec2{X: 0.5, Y: 0.5})
 
-	BotRight := graphics.NewSpriteVisual()
-	BotRight.SetSprite(content.OverBackground)
-	BotRight.SetVisible(true)
-	BotRight.SetAnchors(mathf.Sides{Left: 1, Right: 1, Top: 1, Bottom: 1})
-	BotRight.SetPivot(mathf.Vec2{X: 1, Y: 1})
+	FullScreen := graphics.NewSpriteVisual()
+	FullScreen.SetSprite(content.OverBackground)
+	FullScreen.SetVisible(true)
+	FullScreen.SetAnchors(mathf.Sides{Left: 0, Right: 1, Top: 0, Bottom: 1})
+	FullScreen.SetOffsets(mathf.Sides{Left: 10, Right: 20, Top: 30, Bottom: 40})
 
 	World.InsertChild(TopLeft.Visualer)
 	World.InsertChild(MidCenter.Visualer)
-	World.InsertChild(BotRight.Visualer)
+	World.InsertChild(FullScreen.Visualer)
 
 	return &DemoTree{
-		World:     World,
-		TopLeft:   TopLeft,
-		MidCenter: MidCenter,
-		BotRight:  BotRight,
+		World:      World,
+		TopLeft:    TopLeft,
+		MidCenter:  MidCenter,
+		FullScreen: FullScreen,
 	}, nil
 }
 

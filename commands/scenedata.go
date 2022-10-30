@@ -151,7 +151,7 @@ func SaveSceneData(output *SceneData, path string) error {
 
 	defer outputFile.Close()
 
-	outputBytes, err := json.Marshal(output)
+	outputBytes, err := json.MarshalIndent(output, "", "  ")
 	if err != nil {
 		return err
 	}

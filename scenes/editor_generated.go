@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/miniscruff/igloo"
 	"github.com/miniscruff/igloo/content"
+	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
 
@@ -83,6 +84,7 @@ func NewEditorContent(assets *EditorAssets) (*EditorContent, error) {
 	SonoRegular18Font, err := opentype.NewFace(assets.SonoRegular, &opentype.FaceOptions{
 		Size: 18,
 		DPI:  72,
+		Hinting: font.HintingFull,
 	})
 	if err != nil {
 		return nil, err
@@ -95,6 +97,7 @@ func NewEditorContent(assets *EditorAssets) (*EditorContent, error) {
 	SonoRegular24Font, err := opentype.NewFace(assets.SonoRegular, &opentype.FaceOptions{
 		Size: 24,
 		DPI:  72,
+		Hinting: font.HintingFull,
 	})
 	if err != nil {
 		return nil, err
@@ -107,6 +110,7 @@ func NewEditorContent(assets *EditorAssets) (*EditorContent, error) {
 	SonoRegular36Font, err := opentype.NewFace(assets.SonoRegular, &opentype.FaceOptions{
 		Size: 36,
 		DPI:  72,
+		Hinting: font.HintingFull,
 	})
 	if err != nil {
 		return nil, err

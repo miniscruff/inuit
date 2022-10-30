@@ -1,1 +1,143 @@
-{"metadata":{"name":"Demo"},"content":["NormalBackground","OverBackground","ClickedBackground","SonoRegular18","SonoRegular24","SonoRegular36"],"visuals":[{"name":"World","type":"Empty","useWindowSize":true,"visible":true,"transform":{"position":{"x":0,"y":0},"pivot":{"x":0,"y":0},"anchors":{"left":0,"right":0,"top":0,"bottom":0},"offsets":{"left":0,"right":0,"top":0,"bottom":0}},"sprite":{},"label":{},"children":[{"name":"TopLeft","type":"Sprite","useWindowSize":false,"visible":true,"transform":{"position":{"x":0,"y":0},"pivot":{"x":0,"y":0},"anchors":{"left":0,"right":0,"top":0,"bottom":0},"offsets":{"left":0,"right":0,"top":0,"bottom":0}},"sprite":{"content":"OverBackground"},"label":{}},{"name":"MidCenter","type":"Sprite","useWindowSize":false,"visible":true,"transform":{"position":{"x":0,"y":0},"pivot":{"x":0.5,"y":0.5},"anchors":{"left":0.5,"right":0.5,"top":0.5,"bottom":0.5},"offsets":{"left":0,"right":0,"top":0,"bottom":0}},"sprite":{"content":"OverBackground"},"label":{}},{"name":"BotRight","type":"Sprite","useWindowSize":false,"visible":true,"transform":{"position":{"x":0,"y":0},"pivot":{"x":1,"y":1},"anchors":{"left":1,"right":1,"top":1,"bottom":1},"offsets":{"left":0,"right":0,"top":0,"bottom":0}},"sprite":{"content":"OverBackground"},"label":{}}]}]}
+{
+  "metadata": {
+    "name": "Demo"
+  },
+  "content": [
+    "NormalBackground",
+    "OverBackground",
+    "ClickedBackground",
+    "SonoRegular18",
+    "SonoRegular24",
+    "SonoRegular36"
+  ],
+  "visuals": [
+    {
+      "name": "World",
+      "type": "Empty",
+      "useWindowSize": true,
+      "visible": true,
+      "transform": {
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "pivot": {
+          "x": 0,
+          "y": 0
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "offsets": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        }
+      },
+      "sprite": {},
+      "label": {},
+      "children": [
+        {
+          "name": "TopLeft",
+          "type": "Sprite",
+          "useWindowSize": false,
+          "visible": true,
+          "transform": {
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "pivot": {
+              "x": 0,
+              "y": 0
+            },
+            "anchors": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0
+            },
+            "offsets": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0
+            }
+          },
+          "sprite": {
+            "content": "OverBackground"
+          },
+          "label": {}
+        },
+        {
+          "name": "MidCenter",
+          "type": "Sprite",
+          "useWindowSize": false,
+          "visible": true,
+          "transform": {
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "pivot": {
+              "x": 0.5,
+              "y": 0.5
+            },
+            "anchors": {
+              "left": 0.5,
+              "right": 0.5,
+              "top": 0.5,
+              "bottom": 0.5
+            },
+            "offsets": {
+              "left": 0,
+              "right": 0,
+              "top": 0,
+              "bottom": 0
+            }
+          },
+          "sprite": {
+            "content": "OverBackground"
+          },
+          "label": {}
+        },
+        {
+          "name": "FullScreen",
+          "type": "Sprite",
+          "useWindowSize": false,
+          "visible": true,
+          "transform": {
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "pivot": {
+              "x": 0,
+              "y": 0
+            },
+            "anchors": {
+              "left": 0,
+              "right": 1,
+              "top": 0,
+              "bottom": 1
+            },
+            "offsets": {
+              "left": 10,
+              "right": 20,
+              "top": 30,
+              "bottom": 40
+            }
+          },
+          "sprite": {
+            "content": "OverBackground"
+          },
+          "label": {}
+        }
+      ]
+    }
+  ]
+}

@@ -35,7 +35,6 @@ type EditorScene struct {
 	inputRoot        *graphics.EmptyVisual
 	textInputLabel   *graphics.LabelVisual
 	inputResponse    *graphics.LabelVisual
-	inputBackground  *graphics.SpriteVisual
 	suggestionsLabel *graphics.LabelVisual
 }
 
@@ -121,27 +120,22 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 	s.textInputLabel = graphics.NewLabelVisual()
 	s.textInputLabel.SetFont(s.content.SonoRegular18)
 	s.textInputLabel.ColorM.ScaleWithColor(color.White)
-	s.textInputLabel.Transform.SetX(5)
-	s.textInputLabel.Transform.SetY(windowHeight - 20)
-	s.textInputLabel.Transform.SetPivot(mathf.Vec2TopLeft)
+	s.textInputLabel.Transform.SetPivot(mathf.Vec2BottomLeft)
+	s.textInputLabel.Transform.SetAnchors(mathf.SidesBottomLeft)
+	s.textInputLabel.Transform.SetPosition(mathf.Vec2{X: 5, Y: -5})
 	s.textInputLabel.SetVisible(true)
 
 	s.inputResponse = graphics.NewLabelVisual()
 	s.inputResponse.SetFont(s.content.SonoRegular18)
 	s.inputResponse.ColorM.ScaleWithColor(color.White)
-	s.inputResponse.Transform.SetPivot(mathf.Vec2TopLeft)
+	s.inputResponse.Transform.SetPosition(mathf.Vec2{X: 5, Y: 5})
 	s.inputResponse.SetVisible(true)
-
-	s.inputBackground = graphics.NewSpriteVisual()
-	s.inputBackground.SetSprite(s.content.NormalBackground)
-	s.inputBackground.SetWidth(windowWidth)
-	s.inputBackground.SetPivot(mathf.Vec2TopLeft)
-	s.inputBackground.SetVisible(true)
 
 	s.suggestionsLabel = graphics.NewLabelVisual()
 	s.suggestionsLabel.SetFont(s.content.SonoRegular18)
-	s.suggestionsLabel.Transform.SetY(windowHeight - 24)
 	s.suggestionsLabel.Transform.SetPivot(mathf.Vec2BottomLeft)
+	s.suggestionsLabel.Transform.SetAnchors(mathf.SidesBottomLeft)
+	s.suggestionsLabel.Transform.SetPosition(mathf.Vec2{X: 5, Y: -35})
 	s.suggestionsLabel.SetVisible(true)
 
 	s.inputRoot = graphics.NewEmptyVisual()
@@ -149,10 +143,30 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 	s.inputRoot.Transform.SetHeight(windowHeight)
 	s.inputRoot.SetVisible(false)
 
-	s.inputRoot.InsertChild(s.inputBackground.Visualer)
+	s.inputRoot.InsertChild(s.suggestionsLabel.Visualer)
 	s.inputRoot.InsertChild(s.textInputLabel.Visualer)
 	s.inputRoot.InsertChild(s.inputResponse.Visualer)
-	s.inputRoot.InsertChild(s.suggestionsLabel.Visualer)
+
+	inputBackground := graphics.NewSpriteVisual()
+	inputBackground.SetSprite(s.content.NormalBackground)
+	inputBackground.SetAnchors(mathf.SidesStretchBoth)
+	inputBackground.SetOffsets(mathf.Sides{Left: -5, Right: -5, Top: -5, Bottom: -5})
+	inputBackground.SetVisible(true)
+	s.textInputLabel.InsertChild(inputBackground.Visualer)
+
+	suggestionBackground := graphics.NewSpriteVisual()
+	suggestionBackground.SetSprite(s.content.NormalBackground)
+	suggestionBackground.SetAnchors(mathf.SidesStretchBoth)
+	suggestionBackground.SetOffsets(mathf.Sides{Left: -5, Right: -5, Top: -5, Bottom: -5})
+	suggestionBackground.SetVisible(true)
+	s.suggestionsLabel.InsertChild(suggestionBackground.Visualer)
+
+	responseBackground := graphics.NewSpriteVisual()
+	responseBackground.SetSprite(s.content.NormalBackground)
+	responseBackground.SetAnchors(mathf.SidesStretchBoth)
+	responseBackground.SetOffsets(mathf.Sides{Left: -5, Right: -5, Top: -5, Bottom: -5})
+	responseBackground.SetVisible(true)
+	s.inputResponse.InsertChild(responseBackground.Visualer)
 
 	s.commandInput = components.NewTextEditor()
 	s.commandInput.State.OnTransitionTo(components.TextEditorClosed, func() {
@@ -167,8 +181,9 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 		if len(suggestions) > 0 {
 			s.suggestionsLabel.SetText(strings.Join(suggestions, "\n"))
 		} else {
-			s.suggestionsLabel.SetText("")
+			s.suggestionsLabel.SetText("<none>")
 		}
+
 		s.textInputLabel.SetText(text + "_")
 	}
 	s.commandInput.Tab = func(text string) string {
@@ -191,7 +206,6 @@ func (s *EditorScene) Setup(assetLoader *igloo.AssetLoader) (err error) {
 		}
 
 		s.inputResponse.SetText(output)
-		s.inputBackground.SetHeight(s.inputResponse.NaturalHeight())
 	}
 
 	return nil
@@ -218,6 +232,7 @@ func loadVisual(visual *commands.SceneVisual, contentMap map[string]any, parent 
 	newVis.SetVisible(visual.Visible)
 	newVis.SetPosition(visual.Transform.Position)
 	newVis.SetAnchors(visual.Transform.Anchors)
+	newVis.SetOffsets(visual.Transform.Offsets)
 	newVis.SetPivot(visual.Transform.Pivot)
 	newVis.SetRotation(visual.Transform.Rotation)
 
