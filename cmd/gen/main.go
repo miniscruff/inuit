@@ -158,7 +158,7 @@ func (s *{{.Name}}Scene) Setup(assetLoader *igloo.AssetLoader) error {
 
 func (s *{{.Name}}Scene) Draw(dest *ebiten.Image) {
 	{{- range .Tree}}
-	s.tree.{{ .Name }}.Visualer.Layout(s.tree.{{ .Name }}.Transform)
+	s.tree.{{ .Name }}.Visualer.Layout(s.tree.{{ .Name }}.Transform, nil)
 	s.tree.{{ .Name }}.Visualer.Draw(dest)
 	{{- end}}
 }
@@ -385,9 +385,14 @@ func genVisualBuild(t GenTree, visual *commands.SceneVisual, children []GenTree)
 		t.Name, transform.Rotation,
 	)
 	condWrite(&b,
-		transform.Anchor != mathf.Vec2Zero,
-		"%v.SetAnchor(mathf.Vec2{X: %v, Y: %v})",
-		t.Name, transform.Anchor.X, transform.Anchor.Y,
+		transform.Anchors != mathf.SidesZero,
+		"%v.SetAnchors(mathf.Sides{Left: %v, Right: %v, Top: %v, Bottom: %v})",
+		t.Name, transform.Anchors.Left, transform.Anchors.Right, transform.Anchors.Top, transform.Anchors.Bottom,
+	)
+	condWrite(&b,
+		transform.Pivot != mathf.Vec2Zero,
+		"%v.SetPivot(mathf.Vec2{X: %v, Y: %v})",
+		t.Name, transform.Pivot.X, transform.Pivot.Y,
 	)
 	condWrite(&b,
 		transform.Width != 0, // temp?

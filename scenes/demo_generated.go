@@ -7,6 +7,7 @@ import (
 	"github.com/miniscruff/igloo"
 	"github.com/miniscruff/igloo/content"
 	"github.com/miniscruff/igloo/graphics"
+	"github.com/miniscruff/igloo/mathf"
 	"golang.org/x/image/font/opentype"
 )
 
@@ -128,9 +129,10 @@ func NewDemoContent(assets *DemoAssets) (*DemoContent, error) {
 }
 
 type DemoTree struct {
-	World       *graphics.EmptyVisual
-	AirCanister *graphics.SpriteVisual
-	Generator   *graphics.SpriteVisual
+	World     *graphics.EmptyVisual
+	TopLeft   *graphics.SpriteVisual
+	MidCenter *graphics.SpriteVisual
+	BotRight  *graphics.SpriteVisual
 }
 
 func NewDemoTree(content *DemoContent) (*DemoTree, error) {
@@ -143,29 +145,31 @@ func NewDemoTree(content *DemoContent) (*DemoTree, error) {
 	World.Transform.SetWidth(windowWidth)
 	World.Transform.SetHeight(windowHeight)
 
-	AirCanister := graphics.NewSpriteVisual()
-	AirCanister.SetSprite(content.NormalBackground)
-	AirCanister.SetVisible(true)
-	AirCanister.SetX(450)
-	AirCanister.SetY(125)
-	AirCanister.SetWidth(32)
-	AirCanister.SetHeight(32)
+	TopLeft := graphics.NewSpriteVisual()
+	TopLeft.SetSprite(content.OverBackground)
+	TopLeft.SetVisible(true)
 
-	Generator := graphics.NewSpriteVisual()
-	Generator.SetSprite(content.OverBackground)
-	Generator.SetVisible(true)
-	Generator.SetX(150)
-	Generator.SetY(450)
-	Generator.SetWidth(32)
-	Generator.SetHeight(32)
+	MidCenter := graphics.NewSpriteVisual()
+	MidCenter.SetSprite(content.OverBackground)
+	MidCenter.SetVisible(true)
+	MidCenter.SetAnchors(mathf.Sides{Left: 0.5, Right: 0.5, Top: 0.5, Bottom: 0.5})
+	MidCenter.SetPivot(mathf.Vec2{X: 0.5, Y: 0.5})
 
-	World.InsertChild(AirCanister.Visualer)
-	World.InsertChild(Generator.Visualer)
+	BotRight := graphics.NewSpriteVisual()
+	BotRight.SetSprite(content.OverBackground)
+	BotRight.SetVisible(true)
+	BotRight.SetAnchors(mathf.Sides{Left: 1, Right: 1, Top: 1, Bottom: 1})
+	BotRight.SetPivot(mathf.Vec2{X: 1, Y: 1})
+
+	World.InsertChild(TopLeft.Visualer)
+	World.InsertChild(MidCenter.Visualer)
+	World.InsertChild(BotRight.Visualer)
 
 	return &DemoTree{
-		World:       World,
-		AirCanister: AirCanister,
-		Generator:   Generator,
+		World:     World,
+		TopLeft:   TopLeft,
+		MidCenter: MidCenter,
+		BotRight:  BotRight,
 	}, nil
 }
 
@@ -191,7 +195,7 @@ func (s *DemoScene) Setup(assetLoader *igloo.AssetLoader) error {
 }
 
 func (s *DemoScene) Draw(dest *ebiten.Image) {
-	s.tree.World.Visualer.Layout(s.tree.World.Transform)
+	s.tree.World.Visualer.Layout(s.tree.World.Transform, nil)
 	s.tree.World.Visualer.Draw(dest)
 }
 

@@ -41,8 +41,8 @@ type EditorScene struct {
 
 func NewEditorScene(path string) *EditorScene {
 	s := &EditorScene{
-		path:     path,
-		offset:   mathf.NewTransform(),
+		path:   path,
+		offset: mathf.NewTransform(),
 	}
 	s.commands = commands.NewCommands(s)
 	return s
@@ -217,8 +217,10 @@ func loadVisual(visual *commands.SceneVisual, contentMap map[string]any, parent 
 	visual.Visual = newVis
 	newVis.SetVisible(visual.Visible)
 	newVis.SetPosition(visual.Transform.Position)
-	newVis.SetPivot(visual.Transform.Anchor)
+	newVis.SetAnchors(visual.Transform.Anchors)
+	newVis.SetPivot(visual.Transform.Pivot)
 	newVis.SetRotation(visual.Transform.Rotation)
+
 	if visual.UseWindowSize {
 		newVis.SetWidth(windowWidth)
 		newVis.SetHeight(windowHeight)
@@ -262,11 +264,11 @@ func (s *EditorScene) Update() {
 
 func (s *EditorScene) Draw(dest *ebiten.Image) {
 	for _, v := range s.sceneData.Visuals {
-		v.Visual.Layout(v.Visual.Transform)
+		v.Visual.Layout(v.Visual.Transform, nil)
 		v.Visual.Draw(dest)
 	}
 
-	s.inputRoot.Visualer.Layout(s.inputRoot.Transform)
+	s.inputRoot.Visualer.Layout(s.inputRoot.Transform, nil)
 	s.inputRoot.Visualer.Draw(dest)
 }
 
@@ -286,6 +288,10 @@ func (s *EditorScene) Visual() *commands.SceneVisual {
 
 func (s *EditorScene) SetVisual(visual *commands.SceneVisual) {
 	s.activeVisual = visual
+}
+
+func (s *EditorScene) Path() string {
+	return s.path
 }
 
 func (s *EditorScene) SceneData() *commands.SceneData {

@@ -6,11 +6,9 @@ func writeCommand() *Command {
 		Help: func() string {
 			return "save scene to disk"
 		},
-		Run: writeAction,
+		Run: func(editor Editor, args []string) (string, error) {
+			err := SaveSceneData(editor.SceneData(), editor.Path())
+			return "scene saved", err
+		},
 	}
-}
-
-func writeAction(editor Editor, args []string) (string, error) {
-	err := SaveSceneData(editor.SceneData(), "testing.json")
-	return "scene saved", err
 }

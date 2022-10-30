@@ -1,9 +1,11 @@
 package scenes
 
+import "log"
+
 type DemoScene struct {
-	assets *DemoAssets
+	assets  *DemoAssets
 	content *DemoContent
-	tree *DemoTree
+	tree    *DemoTree
 }
 
 func NewDemoScene() *DemoScene {
@@ -11,6 +13,7 @@ func NewDemoScene() *DemoScene {
 }
 
 func (s *DemoScene) PostSetup() error {
+	log.Println("post setup")
 	return nil
 }
 

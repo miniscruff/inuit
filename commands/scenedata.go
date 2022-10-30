@@ -25,8 +25,8 @@ const (
 	SpriteVisualType VisualType = "Sprite"
 	LabelVisualType  VisualType = "Label"
 
-	InternalDir = ".inuit"
-	AssetsFile = "_assets.json"
+	InternalDir  = ".inuit"
+	AssetsFile   = "_assets.json"
 	ContentsFile = "_content.json"
 	MetadataFile = "_metadata.json"
 )
@@ -67,11 +67,13 @@ type SceneMetadata struct {
 }
 
 type SceneTransform struct {
-	Position mathf.Vec2 `json:"position,omitempty"`
-	Rotation float64    `json:"rotation,omitempty"`
-	Anchor   mathf.Vec2 `json:"anchor,omitempty"`
-	Width    float64    `json:"width,omitempty"`
-	Height   float64    `json:"height,omitempty"`
+	Position mathf.Vec2  `json:"position,omitempty"`
+	Rotation float64     `json:"rotation,omitempty"`
+	Pivot    mathf.Vec2  `json:"pivot,omitempty"`
+	Width    float64     `json:"width,omitempty"`
+	Height   float64     `json:"height,omitempty"`
+	Anchors  mathf.Sides `json:"anchors,omitempty"`
+	Offsets  mathf.Sides `json:"offsets,omitempty"`
 }
 
 type BaseVisualData struct {
